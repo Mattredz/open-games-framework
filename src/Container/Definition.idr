@@ -1,11 +1,20 @@
 module Container.Definition
 
-
-infixr 5 <!  -- container 
+public export
+data Container : Type where
+  MkCUnit : Container
+  MkCont : (s : Type) -> (pos : s -> Type) -> Container
 
 public export
-record Container where
-    constructor (<!)
-    shape    : Type
-    position : shape -> Type
+shape : Container -> Type
+shape MkCUnit         = Unit
+shape (MkCont s _)   = s
+
+public export
+position : (c : Container) -> shape c -> Type
+position MkCUnit       = const Unit
+position (MkCont _ p) = p
+
+
+
 

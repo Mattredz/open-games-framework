@@ -19,6 +19,7 @@
         name = "idris2-open-games-framework";
         buildInputs = with pkgs; [
           idris2
+          idris2Packages.idris2Lsp
           gmp libffi zlib
         ];
         shellHook = ''

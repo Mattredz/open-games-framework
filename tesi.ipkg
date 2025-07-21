@@ -1,0 +1,22 @@
+package tesi
+
+sourcedir = "src"
+
+modules = Arena
+        , Context
+        , Container.Coproduct
+        , Container.Definition
+        , Container.Morphism
+        , Container.Product
+        , CoState.Definition
+        , Games.Definition
+        , Games.Equilibria
+        , Interfaces.Listable
+        , Lens.Composition
+        , Lens.Coproduct
+        , Lens.Definition
+        , Lens.Tensor
+        , Players.Argmax
+        , Players.Definition
+        , State.Definition
+        , Games.Examples.PD

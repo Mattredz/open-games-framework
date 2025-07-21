@@ -8,7 +8,7 @@ import Container.Coproduct
 infixr 5 +++
 
 public export
-(+++) : ParaLens (p <! (\x => q)) xs yr -> ParaLens (p' <! (\x => q)) xs' yr' -> ParaLens ((p, p') <! (\x => q)) (xs + xs') (yr + yr')
+(+++) : ParaLens (MkCont p (\x => q)) xs yr -> ParaLens (MkCont p' (\x => q)) xs' yr' -> ParaLens (MkCont (p, p') (\x => q)) (xs + xs') (yr + yr')
 (+++) (MkParaLens fwd bwd) (MkParaLens fwd' bwd') = MkParaLens
     (\(p, p'), xx => case xx of
         Left x => Left (fwd p x)

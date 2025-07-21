@@ -2,10 +2,12 @@ module Container.Morphism
 
 import Container.Definition
 
+infixr 5 =%>
+infixr 5 !>
 
 public export
-record (=%>) (c1, c2 : Container) where
+record CMorph (xs, yr : Container) where
   constructor (!>)
-  fwd : c1.shape -> c2.shape
-  bwd : (x : c1.shape) -> c2.position (fwd x) -> c1.position x
+  fwd : shape xs -> shape yr
+  bwd : (x : shape xs) -> position yr (fwd x) -> position xs x
 

@@ -61,6 +61,6 @@ equilibrium : (Listable profiles) => Game profiles pq xs yr -> Context xs yr -> 
 equilibrium (MkGame player arena) context =
   let 
     packed = packup arena context
-    game = reparam player (transform)
+    game = reparam player (?transform)
   in fixpoints (?ad paraStateToFun game)
   

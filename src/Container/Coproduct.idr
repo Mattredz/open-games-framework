@@ -4,8 +4,6 @@ import Container.Definition
 
 public export
 (+) : (c1, c2 : Container) -> Container
-(+) MkCUnit c2 = c2
-(+) c1 MkCUnit = c1
 (+) c1 c2 = MkCont (Either (shape c1)  (shape c2) ) (\(xx) => case xx of
     Left x => position c1 x
     Right x' => position c2  x'

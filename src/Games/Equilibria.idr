@@ -13,6 +13,9 @@ import State.Definition
 import CoState.Definition
 
 
+%hide Prelude.Ops.infixl.(*)
+
+
 rDiff : Container -> Container
 rDiff MkCUnit = MkCUnit
 rDiff (MkCont shp pos) = MkCont shp (\s' => (s : shp) -> pos s)
@@ -44,7 +47,7 @@ paraRdiff {pq = MkCont _ _} {xs = MkCUnit} {yr = MkCUnit} (MkParaLens play copla
   )
 paraRdiff _ = ?boh
 
-packup : Arena pq xs yr -> Context xs yr -> ParaLens pq MkCUnit MkCUnit
+packup : Arena pq xs yr -> Context xs yr -> ParaLens (rDiff pq) MkCUnit MkCUnit
 packup arena (MkContext state coState) = paraRdiff (state >>> arena >>> coState)
 
 reparam : DepLens pq' pq -> ParaLens pq xs yr -> ParaLens pq' xs yr

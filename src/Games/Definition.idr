@@ -3,7 +3,7 @@ module Games.Definition
 import Container.Definition
 import Lens.Definition
 import Players.Definition
-import Arena
+import Games.Arena
 
 public export
 record Game (profiles : Type ) (pq, xs, yr : Container) where

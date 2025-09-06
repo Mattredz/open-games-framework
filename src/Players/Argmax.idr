@@ -4,6 +4,7 @@ import Players.Definition
 import Interfaces.Listable
 import Container.Definition
 import Container.Morphism
+import Container.RDiff
 import Lens.Definition
 
 public export
@@ -16,6 +17,5 @@ argmax : Listable x => Ord a => Eq a
 argmax f x = f x == maximum (f x) (map f allValues)
 
 public export
-argmaxPlayer :
-  (Listable s, Ord (u), Eq u) =>  Player s s (\s => u)
-argmaxPlayer = MkPlayer (id !> (\x => ?coplay))
+argmaxPlayer : {s, u : Type} -> (Listable s, Ord u, Eq u) => Player s s (\_ => u)
+argmaxPlayer = MkNonParaLens id (\_, k => argmax k)

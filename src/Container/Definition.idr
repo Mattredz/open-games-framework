@@ -2,19 +2,17 @@ module Container.Definition
 
 public export
 data Container : Type where
-  MkCUnit : Container
-  MkCont : (s : Type) -> (pos : s -> Type) -> Container
+  CUnit : Container
+  CMk   : (S : Type ** S -> Type) -> Container
 
-public export
+public export %inline
 shape : Container -> Type
-shape MkCUnit         = Unit
-shape (MkCont s _)   = s
+shape CUnit            = Unit
+shape (CMk (s ** _))   = s
 
-public export
+public export %inline
 position : (c : Container) -> shape c -> Type
-position MkCUnit       = const Unit
-position (MkCont _ p) = p
-
-
+position CUnit          = const Unit
+position (CMk (_ ** p)) = p
 
 

@@ -1,4 +1,4 @@
-module Arena
+module Games.Arena
 
 import Lens.Definition
 import Container.Definition

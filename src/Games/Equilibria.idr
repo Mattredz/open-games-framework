@@ -3,67 +3,74 @@ module Games.Equilibria
 import Interfaces.Listable
 import Container.Definition
 import Container.Product
+import Container.RDiff
 import Lens.Definition
 import Lens.Composition
 import Games.Definition
 import Players.Definition
-import Arena
+import Games.Arena
 import Context
 import State.Definition
 import CoState.Definition
 
 
-%hide Prelude.Ops.infixl.(*)
-
-
-rDiff : Container -> Container
-rDiff MkCUnit = MkCUnit
-rDiff (MkCont shp pos) = MkCont shp (\s' => (s : shp) -> pos s)
-
-paraRdiff : {pq, xs, yr : Container} -> ParaLens pq xs yr -> ParaLens (rDiff pq) (rDiff xs) (rDiff yr)
-paraRdiff {pq = MkCont _ _} {xs = MkCont _ _} {yr = MkCont _ _} (MkParaLens play coplay) = MkParaLens
-  play
-  (\p, x, payoff =>
-    let
-      f = \x' => fst $ coplay p x' (payoff (play p x'))
-      g = \p' => snd $ coplay p' x (payoff (play p' x))
-    in (f, g)
-  )
-paraRdiff {pq = MkCUnit} {xs = MkCUnit} {yr = MkCUnit} (MkParaLens play coplay) = MkParaLens play coplay
-paraRdiff {pq = MkCont _ _} {xs = MkCont _ _} {yr = MkCUnit} (MkParaLens play coplay) = MkParaLens
-  play
-  (\p, x, payoff =>
-    let
-      f = \x' => fst $ coplay p x' ()
-      g = \p' => snd $ coplay p' x ()
-    in (f, g)
-  )
-paraRdiff {pq = MkCont _ _} {xs = MkCUnit} {yr = MkCUnit} (MkParaLens play coplay) = MkParaLens
-  play
-  (\p, x, payoff =>
-    let
-      g = \p' => snd $ coplay p' x ()
-    in ((), g)
-  )
-paraRdiff _ = ?boh
-
-packup : Arena pq xs yr -> Context xs yr -> ParaLens (rDiff pq) MkCUnit MkCUnit
-packup arena (MkContext state coState) = paraRdiff (state >>> arena >>> coState)
-
-reparam : DepLens pq' pq -> ParaLens pq xs yr -> ParaLens pq' xs yr
-reparam (MkParaLens fwd bwd) (MkParaLens fwd' bwd') = MkParaLens
-  (fwd' . fwd ())
-  (\p, x, r => 
-    let (s, q) = bwd' (fwd () p) x r
-        (q', _) = bwd () p q
-    in (s, q')
-  )
 
 public export
-equilibrium : (Listable profiles) => Game profiles pq xs yr -> Context xs yr -> List profiles
-equilibrium (MkGame player arena) context =
-  let 
-    packed = packup arena context
-    game = reparam player (?transform)
-  in fixpoints (?ad paraStateToFun game)
-  
+paraRdiff
+  :  {pq, xs, yr : Container}
+  -> ParaLens pq xs yr
+  -> ParaLens (rDiff pq) (rDiff xs) (rDiff yr)
+paraRdiff (MkPLens play coplay) =
+  MkPLens
+    play
+    (\p, x, payoff => let
+        s = \x' => fst $ coplay p x' (payoff (play p x'))
+        g = \p' => snd $ coplay p' x (payoff (play p' x))
+        in (s, g))
+
+
+norm : ParaLens pq (rDiff CUnit) (rDiff CUnit)
+       -> ParaLens pq CUnit CUnit
+norm (MkPLens play coplay) =
+  MkPLens
+    (\p, _ => play p ())
+    (\p, _, _ => let (_, q) = coplay p () (const ()) in ((), q))
+
+-- packup: normalizzo via rightUnitProd PRIMA di applicare paraRdiff
+public export %inline
+packup : {pq, xs, yr : Container}
+        -> Arena pq xs yr
+        -> Context xs yr
+        -> ParaLens (rDiff pq) CUnit CUnit
+packup arena (MkContext state coState) =
+  let comp = replace {p = (\d => ParaLens d CUnit CUnit)} (rightUnitProd pq) 
+             (state >>>> arena >>>> coState)
+  in  norm $ paraRdiff comp
+
+-- Reparametrization (operatore *** in Optics.hs)
+public export
+reparam : NonParaLens pq' pq -> ParaLens pq xs yr -> ParaLens pq' xs yr
+reparam (MkPLens playP coplayP) (MkPLens play coplay) =
+  MkPLens
+    (\p', x => play (playP () p') x)
+    (\p', x, r =>
+        let (s, q)  = coplay (playP () p') x r
+            (q', _) = coplayP () p' q
+        in (s, q')
+    )
+
+
+-- Equilibria: chiude il gioco nel contesto e cerca i punti fissi del best response
+-- Se la tua 'fixpoints' richiede uguaglianza decidibile, aggiungi anche 'DecEq profiles'.
+public export
+equilibrium
+  :  (Listable profiles)
+  => 
+  {pq, xs, yr : Container} ->
+  Game profiles pq xs yr
+  -> Context xs yr
+  -> List profiles
+equilibrium (MkGame player arena) ctx =
+  let packed = packup arena ctx                         -- ParaLens (rDiff pq) () ()
+      game   = reparam player packed                   -- ParaLens pq () ()
+  in  fixpoints (paraStateToFun game)                   -- profiles -> profiles

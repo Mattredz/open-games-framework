@@ -1,9 +1,9 @@
-module Context
+module Games.Context
 
 import Container.Definition
 import Lens.Definition
-import State.Definition
-import CoState.Definition
+import Games.State
+import Games.CoState
 
 public export
 record Context (xs, yr : Container) where

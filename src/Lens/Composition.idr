@@ -1,39 +1,30 @@
 module Lens.Composition
 
-import Lens.Definition
 import Container.Definition
 import Container.Product
-%hide Prelude.Ops.infixl.(*)
+import Lens.Definition
 
-infixr 5 >>>
+%default total
+
+infixr 5 >>>>
 
 public export
-(>>>) : {pq, pq' : Container} -> (ParaLens pq xs yr) -> ParaLens pq' yr zt -> ParaLens (pq * pq') xs zt
-(>>>) {pq = MkCUnit} {pq' = MkCont _ _} (MkParaLens fwd bwd) (MkParaLens fwd' bwd') = MkParaLens 
-    (\p, x => fwd' p (fwd () x))
-    (\p, x, t => 
-        let (r, q') = bwd' p (fwd () x) t in
-        let (s, _) = bwd () x r in
-        (s, q')
-    )
-(>>>) {pq' = MkCUnit} {pq = MkCont _ _} (MkParaLens fwd bwd) (MkParaLens fwd' bwd') = MkParaLens 
-    (\p, x => fwd' () (fwd p x))
-    (\p, x, t => 
-        let (r, _) = bwd' () (fwd p x) t in
-        let (s, q) = bwd p x r in
-        (s, q)
-    )
-(>>>) {pq = MkCont _ _} {pq' = MkCont _ _} (MkParaLens fwd bwd) (MkParaLens fwd' bwd') = MkParaLens 
-    (\(p, p'), x => fwd' p' (fwd p x)) 
-    (\(p, p'), x, t => 
-        let (r, q') = bwd' p' (fwd p x) t in
-        let (s, q) = bwd p x r in
-        (s, (q, q'))
-    )
-(>>>) {pq = MkCUnit} {pq' = MkCUnit} (MkParaLens fwd bwd) (MkParaLens fwd' bwd') = MkParaLens 
-    (const (\x => fwd' () (fwd () x)))
-    (const (\x, t => 
-        let (r, _) = bwd' () (fwd () x) t in
-        let (s, _) = bwd () x r in
-        (s, ())
-    ))
+(>>>>)
+  : {pq, xs, yr, pq', zt : Container}
+ -> ParaLens pq  xs yr
+ -> ParaLens pq' yr zt
+ -> ParaLens (ProdCont pq pq') xs zt
+(>>>>) (MkPLens fwd bwd) (MkPLens fwd' bwd') =
+  MkPLens compF compB
+  where
+
+    pL pP = fst (unpackProdShape {c1=pq} {c2=pq'} pP)
+
+    pR pP = snd (unpackProdShape {c1=pq} {c2=pq'} pP)
+
+    compF pP x = fwd' (pR pP) (fwd (pL pP) x)
+
+    compB pP x posZ =
+      let (posY , posPQ') = bwd' (pR pP) (fwd (pL pP) x) posZ
+          (posX , posPQ ) = bwd  (pL pP) x                posY
+      in  ( posX, packProdPositionAt {c1=pq} {c2=pq'} pP posPQ posPQ' )

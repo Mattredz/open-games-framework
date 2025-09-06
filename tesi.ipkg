@@ -1,22 +1,21 @@
-package tesi
+package opengames-framework
 
 sourcedir = "src"
 
-modules = Arena
-        , Context
-        , Container.Coproduct
+modules = Container.Coproduct
         , Container.Definition
-        , Container.Morphism
         , Container.Product
-        , CoState.Definition
+        , Games.State
+        , Games.CoState
         , Games.Definition
+        , Games.Arena
+        , Games.Context
         , Games.Equilibria
         , Interfaces.Listable
         , Lens.Composition
         , Lens.Coproduct
         , Lens.Definition
-        , Lens.Tensor
+        , Lens.Product
         , Players.Argmax
         , Players.Definition
-        , State.Definition
         , Games.Examples.PD

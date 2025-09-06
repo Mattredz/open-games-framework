@@ -2,10 +2,11 @@ module Container.Coproduct
 
 import Container.Definition
 
+-- ... (tutto il resto invariato)
+
 public export
-(+) : (c1, c2 : Container) -> Container
-(+) c1 c2 = MkCont (Either (shape c1)  (shape c2) ) (\(xx) => case xx of
-    Left x => position c1 x
-    Right x' => position c2  x'
-    )
+SumCont : Container -> Container -> Container
+SumCont c1 c2 = CMk (Either (shape c1) (shape c2) ** \e => case e of
+  Left x => position c1 x
+  Right y => position c2 y)
 

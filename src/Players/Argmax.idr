@@ -3,7 +3,6 @@ module Players.Argmax
 import Players.Definition
 import Interfaces.Listable
 import Container.Definition
-import Container.Morphism
 import Container.RDiff
 import Lens.Definition
 

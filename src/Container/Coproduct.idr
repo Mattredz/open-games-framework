@@ -2,7 +2,6 @@ module Container.Coproduct
 
 import Container.Definition
 
--- ... (tutto il resto invariato)
 
 public export
 SumCont : Container -> Container -> Container

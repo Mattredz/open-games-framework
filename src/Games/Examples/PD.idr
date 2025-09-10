@@ -2,7 +2,6 @@ module Games.Examples.PD
 
 import Lens.Definition
 import Container.Definition
-import Container.Morphism
 import Container.Product
 import Container.RDiff
 import Lens.Composition
@@ -10,9 +9,9 @@ import Lens.Product
 import Players.Definition
 import Players.Argmax
 import Interfaces.Listable
-import Context
-import State.Definition
-import CoState.Definition
+import Games.Context
+import Games.State
+import Games.CoState
 import Games.Definition
 import Games.Equilibria
 import Games.Arena
@@ -25,16 +24,11 @@ data MovesPD = C | D
 Listable MovesPD where
   allValues = [C, D]
 
-corner : (c : Container) -> ParaLens c CUnit c
-corner c = MkPLens
-    const
-    (\_, _, r => ((), r))
-
 ContPD : Container
 ContPD = CMk ((MovesPD, MovesPD) ** (\_ => (Int, Int)))
 
-ArenaPD : ParaLens ContPD CUnit ContPD
-ArenaPD = corner ContPD
+ArenaPD : Arena ContPD CUnit ContPD
+ArenaPD = corner 
 
 payoffPD : (MovesPD, MovesPD) -> (Int, Int)
 payoffPD (C, C) = (3, 3)
@@ -54,5 +48,11 @@ contextPD = MkContext (scalarToState ()) (funToCostate payoffPD)
 gamePD : Game (MovesPD, MovesPD) ContPD CUnit ContPD
 gamePD = MkGame PlayersPD ArenaPD
 
-equilibriaPD : ?
+equilibriaPD : List (MovesPD, MovesPD)
 equilibriaPD = equilibrium gamePD contextPD
+
+gamePD' : Game (MovesPD, MovesPD) ? ? ?
+gamePD' = MkGame argmaxPlayer ArenaPD
+
+equilibriaPD' : List (MovesPD, MovesPD)
+equilibriaPD' = equilibrium gamePD' contextPD

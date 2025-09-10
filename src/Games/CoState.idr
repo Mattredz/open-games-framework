@@ -1,7 +1,6 @@
 module Games.CoState
 
 import Container.Definition  -- definizione di Container
-import Container.Morphism   -- definizione di Morphism
 import Lens.Definition       -- definizione di ParaLens e DepLens
 
 

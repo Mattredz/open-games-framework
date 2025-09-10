@@ -1,7 +1,6 @@
 module Games.State
 
 import Container.Definition
-import Container.Morphism
 import Lens.Definition
 
 -- | A State is a DepLens from the unit container to a container over x

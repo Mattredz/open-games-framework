@@ -9,11 +9,9 @@ import Lens.Composition
 import Games.Definition
 import Players.Definition
 import Games.Arena
-import Context
-import State.Definition
-import CoState.Definition
-
-
+import Games.Context
+import Games.State
+import Games.CoState
 
 public export
 paraRdiff
@@ -21,22 +19,18 @@ paraRdiff
   -> ParaLens pq xs yr
   -> ParaLens (rDiff pq) (rDiff xs) (rDiff yr)
 paraRdiff (MkPLens play coplay) =
-  MkPLens
-    play
-    (\p, x, payoff => let
-        s = \x' => fst $ coplay p x' (payoff (play p x'))
-        g = \p' => snd $ coplay p' x (payoff (play p' x))
-        in (s, g))
+  MkPLens play
+    (\p, x, payoff => 
+      ( \x' => fst $ coplay p x' (payoff (play p x'))
+      , \p' => snd $ coplay p' x (payoff (play p' x))
+      ))
 
-
-norm : ParaLens pq (rDiff CUnit) (rDiff CUnit)
-       -> ParaLens pq CUnit CUnit
+norm : ParaLens pq (rDiff CUnit) (rDiff CUnit) -> ParaLens pq CUnit CUnit
 norm (MkPLens play coplay) =
-  MkPLens
+  MkPLens 
     (\p, _ => play p ())
     (\p, _, _ => let (_, q) = coplay p () (const ()) in ((), q))
 
--- packup: normalizzo via rightUnitProd PRIMA di applicare paraRdiff
 public export %inline
 packup : {pq, xs, yr : Container}
         -> Arena pq xs yr
@@ -47,7 +41,6 @@ packup arena (MkContext state coState) =
              (state >>>> arena >>>> coState)
   in  norm $ paraRdiff comp
 
--- Reparametrization (operatore *** in Optics.hs)
 public export
 reparam : NonParaLens pq' pq -> ParaLens pq xs yr -> ParaLens pq' xs yr
 reparam (MkPLens playP coplayP) (MkPLens play coplay) =
@@ -56,21 +49,14 @@ reparam (MkPLens playP coplayP) (MkPLens play coplay) =
     (\p', x, r =>
         let (s, q)  = coplay (playP () p') x r
             (q', _) = coplayP () p' q
-        in (s, q')
-    )
+        in (s, q'))
 
-
--- Equilibria: chiude il gioco nel contesto e cerca i punti fissi del best response
--- Se la tua 'fixpoints' richiede uguaglianza decidibile, aggiungi anche 'DecEq profiles'.
 public export
 equilibrium
   :  (Listable profiles)
-  => 
-  {pq, xs, yr : Container} ->
-  Game profiles pq xs yr
+  => {pq, xs, yr : Container}
+  -> Game profiles pq xs yr
   -> Context xs yr
   -> List profiles
 equilibrium (MkGame player arena) ctx =
-  let packed = packup arena ctx                         -- ParaLens (rDiff pq) () ()
-      game   = reparam player packed                   -- ParaLens pq () ()
-  in  fixpoints (paraStateToFun game)                   -- profiles -> profiles
+  fixpoints (paraStateToFun (reparam player (packup arena ctx)))

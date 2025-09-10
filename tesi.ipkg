@@ -5,6 +5,7 @@ sourcedir = "src"
 modules = Container.Coproduct
         , Container.Definition
         , Container.Product
+        , Container.RDiff
         , Games.State
         , Games.CoState
         , Games.Definition

@@ -1,62 +1,43 @@
 module Games.Equilibria
 
 import Interfaces.Listable
-import Container.Definition
-import Container.Product
-import Container.RDiff
-import Lens.Definition
-import Lens.Composition
+import Optics.Lens
 import Games.Definition
-import Players.Definition
 import Games.Arena
-import Games.Context
-import Games.State
 import Games.CoState
+import Games.State
+import Games.Context
+import Players.Definition
 
 public export
-paraRdiff
-  :  {pq, xs, yr : Container}
-  -> ParaLens pq xs yr
-  -> ParaLens (rDiff pq) (rDiff xs) (rDiff yr)
+packup : {p : Type} -> {q : p -> Type} -> Arena (MkCo p q) xs yr -> Context xs yr -> ParaDepLens (MkCo p q) (MkCo Unit (\_ => Unit)) (MkCo Unit (\_ => Unit))
+packup arena (MkContext st ct) =  let game = st >>> arena >>> ct in pararunitor (paralunitor game)
+
+paraRdiff : {p : Type} -> {q : p -> Type} ->
+            {x : Type} -> {s : x -> Type} ->
+ParaDepLens (MkCo p q) (MkCo x s) (MkCo y r) -> ParaDepLens (MkCo p (\p0 => (p1 : p) -> q p1)) (MkCo x (\x0 => (x1 : x) -> s x1)) (MkCo y (\y0 => (y1 : y) -> r y1))
 paraRdiff (MkPLens play coplay) =
-  MkPLens play
-    (\p, x, payoff => 
-      ( \x' => fst $ coplay p x' (payoff (play p x'))
-      , \p' => snd $ coplay p' x (payoff (play p' x))
-      ))
-
-norm : ParaLens pq (rDiff CUnit) (rDiff CUnit) -> ParaLens pq CUnit CUnit
-norm (MkPLens play coplay) =
-  MkPLens 
-    (\p, _ => play p ())
-    (\p, _, _ => let (_, q) = coplay p () (const ()) in ((), q))
-
-public export %inline
-packup : {pq, xs, yr : Container}
-        -> Arena pq xs yr
-        -> Context xs yr
-        -> ParaLens (rDiff pq) CUnit CUnit
-packup arena (MkContext state coState) =
-  let comp = replace {p = (\d => ParaLens d CUnit CUnit)} (rightUnitProd pq) 
-             (state >>>> arena >>>> coState)
-  in  norm $ paraRdiff comp
-
-public export
-reparam : NonParaLens pq' pq -> ParaLens pq xs yr -> ParaLens pq' xs yr
-reparam (MkPLens playP coplayP) (MkPLens play coplay) =
   MkPLens
-    (\p', x => play (playP () p') x)
-    (\p', x, r =>
-        let (s, q)  = coplay (playP () p') x r
-            (q', _) = coplayP () p' q
-        in (s, q'))
+    play
+    (\(p, x), payoff => let f = \x' => fst $ coplay (p, x') (payoff (play (p, x')))
+                            g = \p' => snd $ coplay (p', x) (payoff (play (p', x)))
+                        in (f, g))
+        
+
+reparam : DLens pq' pq -> ParaDepLens pq xs yr -> ParaDepLens pq' xs yr
+reparam (MkPLens play1 coplay1) (MkPLens play2 coplay2) =
+  MkPLens
+    (\(p, x) => play2 (play1 ((), p), x))
+    (\(p, x), ry => let (s, q) = coplay2 ((play1 ((), p)), x) ry in (s, fst (coplay1 ((), p) q)))
 
 public export
 equilibrium
   :  (Listable profiles)
-  => {pq, xs, yr : Container}
-  -> Game profiles pq xs yr
-  -> Context xs yr
+  => {p : Type} -> {q : Type} 
+  -> Game profiles p q x s y r
+  -> Context (MkCo x s) (MkCo y r)
   -> List profiles
 equilibrium (MkGame player arena) ctx =
-  fixpoints (paraStateToFun (reparam player (packup arena ctx)))
+  let diff = pararunitor $ paralunitor $ lunitor >>> paraRdiff (packup arena ctx) >>> runitor 
+      rep = reparam player diff
+  in fixpoints (paraStateToFun (rep))

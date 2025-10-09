@@ -1,12 +1,11 @@
 module Games.Arena
 
-import Lens.Definition
-import Container.Definition
+import Optics.Lens
 
 public export
-Arena : (pq, xs, yr : Container) -> Type
-Arena = ParaLens
+Arena : Cont -> Cont -> Cont -> Type
+Arena pq xs yr = ParaDepLens pq xs yr
 
 public export
-corner : ParaLens c CUnit c
-corner = MkPLens const (\_, _, r => ((), r))
+corner : ParaDepLens (MkCo p q) (MkCo Unit (\_ => Unit)) (MkCo p q)
+corner = MkPLens (\(p, _) => p) (\(p, _), r => ((), r))

@@ -1,22 +1,17 @@
 module Games.State
 
-import Container.Definition
-import Lens.Definition
+import Optics.Lens
 
 -- | A State is a DepLens from the unit container to a container over x
 public export
-State : Container -> Type
-State yr = NonParaLens CUnit yr
+State : (yr : Cont) -> Type
+State yr = DLens (MkCo () (\_ => ())) yr
 
 public export
-scalarToState : {xs : Container} -> shape xs -> State xs
-scalarToState x = MkNonParaLens (const x) const
+scalarToState : {y : Type} -> {r : y -> Type} -> y -> State (MkCo y r)
+scalarToState x = MkDLens (const x) (\_ => const ())
 
 public export
-stateToScalar : State yr -> shape yr
-stateToScalar (MkPLens fwd _) = fwd () ()
+paraStateToFun : ParaDepLens (MkCo p q) (MkCo () (const ())) (MkCo () (const ())) -> ((s : p) -> q s)
+paraStateToFun (MkPLens _ bwd) p0 = snd (bwd (p0, ()) ())
 
-
-public export
-paraStateToFun : ParaLens pq CUnit CUnit -> ((s : shape pq) -> position pq s)
-paraStateToFun (MkPLens _ bwd) p = snd $ bwd p () ()

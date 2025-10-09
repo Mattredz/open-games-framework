@@ -1,13 +1,13 @@
 module Games.Context
 
-import Container.Definition
-import Lens.Definition
 import Games.State
 import Games.CoState
+import Optics.Lens
 
 public export
-record Context (xs, yr : Container) where
+record Context xs yr where
   constructor MkContext
-  state   : State xs
-  coState : CoState yr
+  state : State xs
+  costate : CoState yr
+
 

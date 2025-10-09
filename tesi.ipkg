@@ -2,21 +2,14 @@ package opengames-framework
 
 sourcedir = "src"
 
-modules = Container.Coproduct
-        , Container.Definition
-        , Container.Product
-        , Container.RDiff
-        , Games.State
+modules = 
+        Games.State
         , Games.CoState
         , Games.Definition
         , Games.Arena
         , Games.Context
         , Games.Equilibria
         , Interfaces.Listable
-        , Lens.Composition
-        , Lens.Coproduct
-        , Lens.Definition
-        , Lens.Product
         , Players.Argmax
         , Players.Definition
         , Games.Examples.PD

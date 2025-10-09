@@ -1,11 +1,6 @@
 module Games.Examples.PD
 
-import Lens.Definition
-import Container.Definition
-import Container.Product
-import Container.RDiff
-import Lens.Composition
-import Lens.Product
+import Optics.Lens
 import Players.Definition
 import Players.Argmax
 import Interfaces.Listable
@@ -16,7 +11,6 @@ import Games.Definition
 import Games.Equilibria
 import Games.Arena
 
-%hide Prelude.Ops.infixl.(*)
 
 public export
 data MovesPD = C | D
@@ -24,35 +18,22 @@ data MovesPD = C | D
 Listable MovesPD where
   allValues = [C, D]
 
-ContPD : Container
-ContPD = CMk ((MovesPD, MovesPD) ** (\_ => (Int, Int)))
 
-ArenaPD : Arena ContPD CUnit ContPD
-ArenaPD = corner 
+PDCont : Cont
+PDCont = MkCo (MovesPD, MovesPD) (const (Int, Int))
 
 payoffPD : (MovesPD, MovesPD) -> (Int, Int)
 payoffPD (C, C) = (3, 3)
-payoffPD (C, D) = (0, 5)
-payoffPD (D, C) = (5, 0)
+payoffPD (C, D) = (5, 0)
+payoffPD (D, C) = (0, 5)
 payoffPD (D, D) = (1, 1)
 
-PlayerPD : Player MovesPD MovesPD (\_ => Int)
-PlayerPD = argmaxPlayer
-
-PlayersPD : Player (MovesPD, MovesPD) (MovesPD, MovesPD) (\_ => (Int, Int))
-PlayersPD = PlayerPD #### PlayerPD
-
-contextPD : Context CUnit ContPD
+contextPD : Context (MkCo () (const ())) PDCont
 contextPD = MkContext (scalarToState ()) (funToCostate payoffPD)
 
-gamePD : Game (MovesPD, MovesPD) ContPD CUnit ContPD
-gamePD = MkGame PlayersPD ArenaPD
+gamePD : Game (MovesPD, MovesPD) (MovesPD, MovesPD) (Int, Int) () (const ()) (MovesPD, MovesPD) (const (Int, Int))
+gamePD = MkGame (nash argmaxPlayer argmaxPlayer) corner
 
 equilibriaPD : List (MovesPD, MovesPD)
 equilibriaPD = equilibrium gamePD contextPD
 
-gamePD' : Game (MovesPD, MovesPD) ? ? ?
-gamePD' = MkGame argmaxPlayer ArenaPD
-
-equilibriaPD' : List (MovesPD, MovesPD)
-equilibriaPD' = equilibrium gamePD' contextPD

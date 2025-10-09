@@ -1,17 +1,16 @@
 module Games.CoState
 
-import Container.Definition  -- definizione di Container
-import Lens.Definition       -- definizione di ParaLens e DepLens
+import Optics.Lens   
 
 
 public export
-CoState : (xs : Container) -> Type
-CoState xs = NonParaLens xs CUnit
+CoState : (xs : Cont) -> Type
+CoState xs = DLens xs (MkCo () (\_ => ()))
 
 public export
-funToCostate : {xs : Container} -> ((x : shape xs) -> position xs x) -> CoState xs
-funToCostate f = MkNonParaLens (const ()) (\x => const (f x))
+funToCostate : {x : Type} -> {s : x -> Type} -> ((x' : x) -> s x') -> CoState (MkCo x s)
+funToCostate f = MkDLens (const ()) (\x => const (f x))
 
 public export
-costateToFun : {xs : Container} -> CoState xs -> ((x : shape xs) -> position xs x)
-costateToFun (MkPLens _ bwd) key = fst (bwd () key ())
+costateToFun : {x : Type} -> {s : x -> Type} -> CoState (MkCo x s) -> ((x' : x) -> s x')
+costateToFun (MkPLens _ bwd) x0 = fst (bwd ((), x0) ())

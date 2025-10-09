@@ -1,12 +1,13 @@
 module Games.Definition
 
-import Container.Definition
-import Lens.Definition
-import Players.Definition
+import Optics.Lens
 import Games.Arena
+import Players.Definition
 
 public export
-record Game (profiles : Type ) (pq, xs, yr : Container) where
+record Game (profiles : Type) (actions : Type) (utility : Type) 
+                (states : Type) (copayoffs : states -> Type)
+                (moves : Type) (payoffs : moves -> Type) where
   constructor MkGame
-  player : Player profiles (shape pq) (position pq)
-  arena  : Arena pq xs yr
+  player : Player profiles actions utility
+  arena  : Arena (MkCo actions (\a => utility)) (MkCo states copayoffs) (MkCo moves payoffs)

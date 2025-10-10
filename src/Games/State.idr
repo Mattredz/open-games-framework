@@ -12,6 +12,6 @@ scalarToState : {y : Type} -> {r : y -> Type} -> y -> State (MkCo y r)
 scalarToState x = MkDLens (const x) (\_ => const ())
 
 public export
-paraStateToFun : ParaDepLens (MkCo p q) (MkCo () (const ())) (MkCo () (const ())) -> ((s : p) -> q s)
-paraStateToFun (MkPLens _ bwd) p0 = snd (bwd (p0, ()) ())
+paraStateToFun : ParaDepLens (MkCo p q) (MkParaCont (const ()) (\_ => const ())) (MkCo () (const ())) -> ((s : p) -> q s)
+paraStateToFun (MkPLens _ bwd) p0 = snd (bwd p0 () ())
 

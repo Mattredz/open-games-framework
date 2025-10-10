@@ -23,17 +23,32 @@ PDCont : Cont
 PDCont = MkCo (MovesPD, MovesPD) (const (Int, Int))
 
 payoffPD : (MovesPD, MovesPD) -> (Int, Int)
-payoffPD (C, C) = (3, 3)
+payoffPD (C, C) = (1, 1)
 payoffPD (C, D) = (5, 0)
 payoffPD (D, C) = (0, 5)
-payoffPD (D, D) = (1, 1)
+payoffPD (D, D) = (3, 3)
 
 contextPD : Context (MkCo () (const ())) PDCont
 contextPD = MkContext (scalarToState ()) (funToCostate payoffPD)
 
-gamePD : Game (MovesPD, MovesPD) (MovesPD, MovesPD) (Int, Int) () (const ()) (MovesPD, MovesPD) (const (Int, Int))
-gamePD = MkGame (nash argmaxPlayer argmaxPlayer) corner
+playerPD : Player MovesPD MovesPD (const Int)
+playerPD = argmaxPlayer
+
+nash_gamePD : Game (MovesPD, MovesPD) (MovesPD, MovesPD) (const (Int, Int) )(MkParaCont (\p => ()) (\_ => const ())) PDCont
+nash_gamePD = MkGame (nash playerPD playerPD) corner
 
 equilibriaPD : List (MovesPD, MovesPD)
-equilibriaPD = equilibrium gamePD contextPD
+equilibriaPD = equilibrium nash_gamePD contextPD
 
+socialUtilityPD : (MovesPD, MovesPD) -> Int
+socialUtilityPD moves = let (u1, u2) = payoffPD moves in u1 + u2
+
+contextHicksPD : Context (MkCo () (const ())) (MkCo (MovesPD, MovesPD) (const Int))
+contextHicksPD = MkContext (scalarToState ()) (funToCostate socialUtilityPD)
+
+hicks_gamePD : Game (MovesPD, MovesPD) (MovesPD, MovesPD) (const Int) (MkParaCont (\p => ()) (\_ => const ())) (MkCo (MovesPD, MovesPD) (const Int))
+hicks_gamePD = MkGame argmaxPlayer corner
+
+
+equilibriaHicksPD : List (MovesPD, MovesPD)
+equilibriaHicksPD = equilibrium hicks_gamePD contextHicksPD

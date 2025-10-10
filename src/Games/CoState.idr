@@ -13,4 +13,4 @@ funToCostate f = MkDLens (const ()) (\x => const (f x))
 
 public export
 costateToFun : {x : Type} -> {s : x -> Type} -> CoState (MkCo x s) -> ((x' : x) -> s x')
-costateToFun (MkPLens _ bwd) x0 = fst (bwd ((), x0) ())
+costateToFun (MkPLens _ bwd) x0 = fst (bwd () x0 ())

@@ -14,7 +14,7 @@ argmax : Listable x => Ord a => Eq a
 argmax f x = f x == maximum (f x) (map f allValues)
 
 public export
-argmaxPlayer : {s, u : Type} -> (Listable s, Ord u, Eq u) => Player s s u
+argmaxPlayer : (Listable s, Ord u, Eq u) => Player s s (const u)
 argmaxPlayer = MkDLens
                 id
-                (\_, k => argmax k )
+                (\x, k => argmax k)

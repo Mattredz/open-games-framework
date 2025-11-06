@@ -1,15 +1,23 @@
-package opengames-framework
+package optics-game-theory
+
+version = 1.0.0
+authors = "Matteo Rossi"
+license = "MIT"
+brief = "Parametrized dependent lenses and categorical game theory in Idris 2"
+readme = "README.md"
 
 sourcedir = "src"
 
-modules = 
-        Games.State
-        , Games.CoState
-        , Games.Definition
-        , Games.Arena
-        , Games.Context
-        , Games.Equilibria
-        , Interfaces.Listable
-        , Players.Argmax
-        , Players.Definition
-        , Games.Examples.PD
+modules = Interfaces.Listable
+        , Lenses.DTypes
+        , Lenses.ParaDLens
+        , Lenses.Operators
+        , Lenses.States
+        , Lenses.Utils
+        , GameTheory.Core
+        , GameTheory.Combinators
+        , GameTheory.Examples.PrisonerDilemma
+        , GameTheory.Examples.UltimatumGame
+        , GameTheory.Examples.UltimatumChoice
+        , GameTheory.Examples.InspectionGame
+

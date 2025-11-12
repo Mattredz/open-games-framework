@@ -57,5 +57,5 @@ CoStateToFun (MkParaLens _ bwd) y0 = fst (bwd () y0 ())
 |||
 ||| Recovers the parameterized function encoded in a parameterized lens.
 public export
-ParaStateToFun : ParaDLens p q DUnit DUnit -> (p -> q)
+ParaStateToFun : ParaDLens pq DUnit DUnit -> ((p : pq.fst) -> pq.snd p)
 ParaStateToFun (MkParaLens _ bwd) p0 = snd (bwd p0 () ())

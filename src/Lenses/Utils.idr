@@ -1,4 +1,3 @@
-||| Utility functions for optimization and fixed-point computation
 |||
 ||| This module provides general-purpose utilities for working with
 ||| ordered types and finding optimal values.
@@ -28,17 +27,6 @@ maximum = foldl max
 |||
 ||| @ f The function to maximize
 public export
-argmax : (Listable x, Ord a, Eq a) => (x -> a) -> (x -> Bool)
-argmax f x =
-  case allValues of
-    []        => True
-    (h :: hs) => f x == maximum (f h) (map f hs)
+argmax : (Listable x, Ord a, Eq a) => (x -> a) -> x -> Bool
+argmax f x = (f x) == maximum (f x) (map f allValues ) 
 
-||| Compute fixed points of a boolean predicate
-|||
-||| Returns all values in a listable type that satisfy the predicate.
-|||
-||| @ f The predicate function
-public export
-fixpoints : Listable x => (x -> Bool) -> List x
-fixpoints f = filter f allValues

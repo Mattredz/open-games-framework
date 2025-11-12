@@ -19,5 +19,5 @@ modules = Interfaces.Listable
         , GameTheory.Examples.PrisonerDilemma
         , GameTheory.Examples.UltimatumGame
         , GameTheory.Examples.UltimatumChoice
-        , GameTheory.Examples.InspectionGame
+        
 

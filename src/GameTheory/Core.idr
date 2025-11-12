@@ -24,43 +24,58 @@ import Interfaces.Listable
 ||| @ utility The utility function type over actions
 public export
 Player : (profiles : Type) ->
-         (actions : Type) ->
-         (utility : Type) ->
+         (a : Type) -> (a -> Type) ->
          Type
 Player profiles a u = 
-    DLens (profiles ** const (profiles -> Bool)) 
-          (a ** const (a -> u))
+    DLens (profiles ** \p => Bool) 
+          (a ** \_ => (a1 : a) -> u a1)
 
 ||| Game arena: an alias for ParaDLens representing game structure
 public export
-Arena : (p : Type) -> (q : Type) ->
+Arena : (pq : (P : Type ** P -> Type)) ->
         (xs : (X : Type ** X -> Type)) ->
         (yr : (Y : Type ** Y -> Type)) ->
         Type
 Arena = ParaDLens
 
+public export
+AND : DLens ((p, p') ** \pp => Bool) ((p, p') ** \pp => (Bool, Bool))
+AND = MkDLens id (\_, (b1, b2) => b1 && b2)
+
+
+public export
+Laxator : {u : a -> Type} -> {u' : a' -> Type} ->
+            DLens ((a, a') ** const (((x1 : a) -> u x1), ((x1 : a') -> u' x1))) ((a, a') ** const $ (xx : (a, a')) -> (u $ fst xx, u' $ snd xx))
+Laxator = MkDLens id (\(x, x'), f => (\x => fst $ f (x, x'), \x' => snd $ f (x, x')))
+
+
 infixl 8 $$
 ||| Nash equilibrium composition
 |||
 ||| Combines two players into a single player representing their
-||| simultaneous interaction in a Nash equilibrium.
+||| interaction in a Nash equilibrium.
 |||
 ||| @ p1 The first player
 ||| @ p2 The second player
 public export
-($$) : Player p a u ->
+($$) : {u : a -> Type} -> {u' : a' -> Type} ->
+       Player p a u ->
        Player p' a' u' ->
-       Player (p, p') (a, a') (u, u')
-($$) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) =
-  MkDLens 
-    (\pp => (play1 () (fst pp), play2 () (snd pp)))
-    (\pp, payoffs => 
-        let pay1 = \a1 : a => fst $ payoffs (a1, play2 () (snd pp))
-            pay2 = \a2 : a' => snd $ payoffs (play1 () (fst pp), a2)
-            (s1, _) = coplay1 () (fst pp) pay1
-            (s2, _) = coplay2 () (snd pp) pay2
-        in \(p1, p2) => s1 p1 && s2 p2)
+       Player (p, p') (a, a') (\aa => (u (fst aa), u' (snd aa)))
+($$) p1 p2 = AND |>> p1 *** p2 |>> Laxator
 
+
+public export
+record Game (au : (A : Type ** A -> Type))
+            (xs : (X : Type ** X -> Type))
+            (yr : (Y : Type ** Y -> Type)) where
+    constructor MkGame
+    ||| The game arena structure
+    arena : Arena  au xs yr
+    ||| The initial state of the game
+    state : State xs
+    ||| The outcome payoff function in form of a costate
+    payoff : CoState yr
 
 ||| Equilibrium computation
 |||
@@ -72,15 +87,13 @@ public export
 ||| @ h The initial state
 ||| @ k The outcome observation
 public export
-Equilibrium : {p : Type} -> (Listable p) =>
-              ParaDLens a u xs yr ->
-              Player p a u ->
-              State xs ->
-              CoState yr ->
+Equilibrium : (Listable p) =>
+              Game au xs yr ->
+              Player p au.fst au.snd ->
               List p
-Equilibrium game player h k  =
+Equilibrium (MkGame game h k) player  =
   let K = h |>> game <<| k
-      D = Dlunitor |>> (ParaRDiff K) <<| Drunitor
+      D = diffLunitor |>> (lift K) <<| diffRunitor
       R = reparam D player
       f = ParaStateToFun R
-  in fixpoints f
+  in [ p | p <- allValues, f p]

@@ -18,15 +18,15 @@ import public Lenses.DTypes
 ||| @ xs The source dependent type
 ||| @ yr The target dependent type
 public export
-record ParaDLens (p : Type) (q : Type)
+record ParaDLens (pq : (P : Type ** P -> Type))
                  (xs : (X : Type ** X -> Type)) 
                  (yr : (Y : Type ** Y -> Type)) where
     constructor MkParaLens
     ||| Forward direction: transforms source to target given a parameter
-    play : p -> xs.fst -> yr.fst
+    play : pq.fst -> xs.fst -> yr.fst
     ||| Backward direction: updates source and parameter given target observation
-    coplay : (p1 : p) -> (x : xs.fst) -> 
-             yr.snd (play p1 x) -> (xs.snd x, q)
+    coplay : (p1 : pq.fst) -> (x : xs.fst) -> 
+             yr.snd (play p1 x) -> (xs.snd x, pq.snd p1)
 
 ||| Non-parameterized dependent lens
 |||
@@ -38,7 +38,7 @@ public export
 DLens : (xs : (X : Type ** X -> Type)) ->
         (yr : (Y : Type ** Y -> Type)) ->
         Type
-DLens xs yr = ParaDLens () () xs yr
+DLens xs yr = ParaDLens DUnit xs yr
 
 ||| Smart constructor for non-parameterized dependent lenses
 |||

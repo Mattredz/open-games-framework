@@ -40,32 +40,34 @@ PDPayoff (C, D) = (0, 5)
 PDPayoff (D, C) = (5, 0)
 PDPayoff (D, D) = (1, 1)
 
+
+PDPlayer = Argmax {a = PDAction} {u = Int}
+
+PDGame = MkGame corner (scalarToState ()) (FunToCoState PDPayoff)
+
 ||| Nash equilibrium of the Prisoner's Dilemma
 |||
 ||| Computes the Nash equilibrium strategy profile.
 ||| The unique Nash equilibrium is (D, D) - both players defect.
 public export
 PDNashE : List (PDAction, PDAction)
-PDNashE = Equilibrium corner 
-                      (Argmax $$ Argmax) 
-                      (scalarToState ()) 
-                      (FunToCoState PDPayoff)
+PDNashE = Equilibrium PDGame (PDPlayer $$ PDPlayer)
+
 
 ||| Sum utility transformation
 |||
 ||| Transforms a pair of utilities to their sum, used for computing
-||| Pareto optimal outcomes.
+||| Hicks optimal outcome.
 public export
-Sum : DLens (x ** const Int) (x ** const (Int, Int))
-Sum = MkDLens id (\_, (u1, u2) => u1 + u2)
+Sum : DLens (x ** const $ x -> Int) (x ** const  $ x -> (Int, Int))
+Sum = MkDLens id (\_, u, x => let (u1, u2) = u x in u1 + u2)
 
 ||| Hicksian equilibrium of the Prisoner's Dilemma
 |||
 ||| Computes equilibria under utilitarian social welfare maximization.
-||| This finds the Pareto optimal outcome (C, C).
+||| This finds a solution in the optimal outcome (C, C).
+||| Note that this is not a Pareto equilibrium in the standard sense,
+||| beca
 public export
 PDHicksE : List (PDAction, PDAction)
-PDHicksE = Equilibrium corner 
-                       Argmax 
-                       (scalarToState ()) 
-                       (Sum |>> FunToCoState PDPayoff)
+PDHicksE = Equilibrium PDGame (Argmax |>> Sum)

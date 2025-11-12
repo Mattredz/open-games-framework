@@ -8,6 +8,10 @@ import GameTheory.Core
 ||| Specialized version of argmax for game theory contexts.
 public export
 Argmax : (Listable a, Ord u, Eq u) => 
-         Player a a u
-Argmax = MkDLens id (\a, k => argmax k)
+         Player a a (const u)
+Argmax = MkDLens id (\a, k => argmax k a)
 
+public export
+FArgmax : (Listable p, Ord u, Eq u) => 
+          (p -> a) -> Player p a (const u)
+FArgmax f = MkDLens f (\a, k => argmax (k . f) a)

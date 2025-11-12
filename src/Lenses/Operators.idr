@@ -8,13 +8,11 @@ import public Lenses.DTypes
 
 %default total
 
-
-
 infixr 9 >>>
 public export
-(>>>) : ParaDLens p q xs yr ->
-        ParaDLens p' q' yr zt ->
-        ParaDLens (p, p') (q, q') xs zt
+(>>>) : ParaDLens pq xs yr ->
+        ParaDLens pq' yr zt ->
+        ParaDLens (DProd pq pq') xs zt
 (>>>) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) = 
   MkParaLens
   (\(p, p'), x => play2 p' (play1 p x))
@@ -24,35 +22,12 @@ public export
       in (s, (q1, q2)))
 
 
-infixl 9 |>>
+infixr 10 ****
 public export
-(|>>) : DLens xs yr -> ParaDLens p q yr zt -> ParaDLens p q xs zt
-(|>>) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) =
-    MkParaLens
-    (\p, x => play2 p (play1 () x))
-    (\p, x, tz =>
-        let (r, q2) = coplay2 p (play1 () x) tz
-            (s, _)  = coplay1 () x r
-        in (s, q2))
-
-
-infixl 9 <<|
-public export
-(<<|) : ParaDLens p q xs yr -> DLens yr zt -> ParaDLens p q xs zt
-(<<|) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) =
-    MkParaLens
-    (\p, x => play2 () (play1 p x))
-    (\p, x, tz =>
-        let (r, _)  = coplay2 () (play1 p x) tz
-            (s, q1) = coplay1 p x r
-        in (s, q1))
-
-infixr 10 ***
-public export
-(***) : ParaDLens p q xs yr ->
-        ParaDLens p' q' xs' yr' ->
-        ParaDLens (p, p') (q, q') (DProd xs xs') (DProd yr yr')
-(***) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) =
+(****) : ParaDLens pq xs yr ->
+        ParaDLens pq' xs' yr' ->
+        ParaDLens (DProd pq pq') (DProd xs xs') (DProd yr yr')
+(****) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) =
     MkParaLens 
     (\(p, p'), (x, x') => (play1 p x, play2 p' x'))
     (\(p, p'), (x, x'), (ry, ry') =>
@@ -60,12 +35,14 @@ public export
             (s2, q2) = coplay2 p' x' ry'
         in ((s1, s2), (q1, q2)))
 
-infixr 10 +++
+infixr 10 ++++
 public export
-(+++) : ParaDLens p q xs yr ->
-        ParaDLens p' q' xs' yr' ->
-        ParaDLens (p, p') (Either q q') (DEither xs xs') (DEither yr yr')
-(+++) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) =
+(++++) : ParaDLens pq xs yr ->
+        ParaDLens pq' xs' yr' ->
+        ParaDLens ((pq.fst, pq'.fst) ** \pp => Either (pq.snd (fst pp)) (pq'.snd (snd pp)))
+                  (DEither xs xs') 
+                  (DEither yr yr')
+(++++) (MkParaLens play1 coplay1) (MkParaLens play2 coplay2) =
     MkParaLens
     (\(p, p'), e => case e of
                  Left  x  => Left  (play1 p x)
@@ -97,17 +74,26 @@ CoUnitor = MkDLens
     (\case 
             Left _ => id
             Right _ => id)
-
-||| Parameterized counitor
 public export
-ParaCoUnitor : DLens DUnit (((), ()) ** const (Either () ()))
-ParaCoUnitor = MkDLens
-    (\_ => ((), ()))
+Lunitor : DLens xs (((), xs.fst) ** \xx => ((), xs.snd (snd xx)))
+Lunitor = MkDLens
+    (\x => ((), x))
+    (\_, ((), s) => s)
+
+public export
+Runitor : DLens xs ((xs.fst, ()) ** \xx => (xs.snd (fst xx), ()))
+Runitor = MkDLens
+    (\x => (x, ()))
+    (\_, (s, ()) => s)
+
+public export
+diffLunitor : DLens DUnit (() ** const (() -> ()))
+diffLunitor = MkDLens
+    (\_ => ())
     (\_, _ => ())
 
-||| Product unitor: unit product isomorphism
 public export
-ProdUnitor : DLens (DProd DUnit DUnit) DUnit
-ProdUnitor = MkDLens
+diffRunitor : DLens (() ** const (() -> ())) DUnit
+diffRunitor = MkDLens
     (\_ => ())
-    (\_, _ => ((), ()))
+    (\_, _ => const ())

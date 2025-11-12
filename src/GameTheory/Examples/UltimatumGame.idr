@@ -45,19 +45,19 @@ UGPayoff (_, Reject)      = (0, 0)
 |||
 ||| The first player chooses an offer which becomes visible to both players.
 public export
-OfferArena : Arena Offer Int DUnit (Offer ** const Int)
+OfferArena : Arena (Offer ** const Int) DUnit (Offer ** const Int)
 OfferArena = corner
 
 ||| The offering player's decision rule
 public export
-Offerer : Player Offer Offer Int
+Offerer : Player Offer Offer (const Int)
 Offerer = Argmax
 
 ||| Arena for the response stage
 |||
 ||| The second player observes the offer and decides to accept or reject.
 public export
-ResponseArena : Arena (Offer -> Response) Int 
+ResponseArena : Arena ((Offer -> Response) ** const Int) 
                       (Offer ** const Int) 
                       ((Offer, Response) ** const (Int, Int))
 ResponseArena = MkParaLens
@@ -74,8 +74,8 @@ implementation Listable RespProfiles where
 
 ||| The responding player's decision rule
 public export
-Responder : Player RespProfiles (Offer -> Response) Int
-Responder = MkDLens profileToFun (\p, k => argmax (k . profileToFun))
+Responder : Player RespProfiles (Offer -> Response) (const Int)
+Responder = FArgmax profileToFun 
     where
     profileToFun : RespProfiles -> (Offer -> Response)
     profileToFun AlwaysAccept = const Accept
@@ -90,7 +90,7 @@ Responder = MkDLens profileToFun (\p, k => argmax (k . profileToFun))
 ||| Standard prediction: Offerer proposes Unfair, Responder accepts everything.
 public export
 UltE : List (Offer, RespProfiles)
-UltE = Equilibrium (OfferArena >>> ResponseArena) 
-                   (Offerer $$ Responder) 
+UltE = Equilibrium (MkGame (OfferArena >>> ResponseArena) 
                    (scalarToState ()) 
-                   (FunToCoState UGPayoff)
+                   (FunToCoState UGPayoff))
+                   (Offerer $$ Responder)

@@ -16,15 +16,15 @@ COffer : Type
 COffer = Either () ()
 
 ||| Arena for the choice of offer
-ChoiceOffer : Arena COffer Int DUnit (COffer ** SEither (const Int) (const Int))
+ChoiceOffer : Arena (COffer ** const Int) DUnit (COffer ** SEither (const Int) (const Int))
 ChoiceOffer = MkParaLens 
     (const)
-    (\o, _, ry => case o of
-                     Left _   => ((), ry)
-                     Right _  => ((), ry))
+    (\case 
+        Left x   => \_, payoff => ((), payoff)
+        Right x'  => \_, payoff => ((), payoff))
 
 ||| Arena for the responder
-ChoiceResponder : Arena Response Int (() ** const Int) (Response ** const (Int, Int))
+ChoiceResponder : Arena (Response ** const Int) (() ** const Int) (Response ** const (Int, Int))
 ChoiceResponder = MkParaLens
     (const)
     (\_, _ => id)
@@ -39,16 +39,25 @@ UnfairPayoff Accept = (8, 2)
 UnfairPayoff Reject = (0, 0)
 
 ||| The choosing player's decision rule
-ChP : Player Offer COffer Int
-ChP = MkDLens convert (\o, k => argmax (k . convert))
+ChP : Player Offer COffer (const Int)
+ChP = FArgmax convert
   where
     convert : Offer -> COffer
     convert Fair  = Left ()
     convert Unfair = Right ()
 
+
+RhP : Player RespProfiles (Response, Response) (\x => Either (const Int x) (const Int x))
+RhP = FArgmax convert
+  where
+    convert : RespProfiles -> (Response, Response)
+    convert AlwaysAccept = (Accept, Accept)
+    convert AlwaysReject = (Reject, Reject)
+    convert RejectUnfair = (Accept, Reject)
+
 ||| Mixed strategy Nash equilibrium of the Ultimatum Choice Game
-ChoiceE : List (Offer, (Response, Response))
-ChoiceE = Equilibrium (ChoiceOffer >>> ChoiceResponder +++ ChoiceResponder) 
-                      (ChP $$ Argmax)
-                      (scalarToState (())) 
-                      (DCoProd (FunToCoState FairPayoff) (FunToCoState UnfairPayoff) <<| CoUnitor)
+ChoiceE : List (Offer, RespProfiles)
+ChoiceE = Equilibrium (MkGame (ChoiceOffer >>> ChoiceResponder ++++ ChoiceResponder) 
+                      (scalarToState ()) 
+                      (DCoProd (FunToCoState FairPayoff) (FunToCoState UnfairPayoff) <<| CoUnitor))
+                      (ChP $$ RhP)
